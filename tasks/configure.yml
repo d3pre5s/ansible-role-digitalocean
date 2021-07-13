@@ -1,0 +1,66 @@
+---
+# tasks file for ansible-role-digitalocean
+#
+# legacy information:
+# here was
+#  vars:
+#    ansible_ssh_user: "root"
+#    ansible_ssh_private_key_file: "{{ role_path }}/files/ansible.key"
+# for tasks before root-access goes disabled
+#
+- name: DigitalOcean | Ensure Python is installed
+  remote_user: root
+  raw: test -e /usr/bin/python || (apt -y update && apt install -y python3-pip)
+  changed_when: False
+  ignore_errors: true
+  retries: 3
+  delay: 5
+  register: result
+  until: result is succeeded
+
+- name: "DigitalOcean | Add {{ do_user }} group"
+  remote_user: root
+  group:
+    name: "{{ do_user }}"
+    state: present
+
+- name: "DigitalOcean | Add User: {{ do_user }}"
+  remote_user: root
+  user:
+    name: "{{ do_user }}"
+    group: "{{ do_user }}"
+    shell: "/bin/bash"
+    createhome: yes
+    append: "yes"
+
+- name: DigitalOcean | Add Pub key
+  remote_user: root
+  authorized_key:
+    user: "{{ do_user }}"
+    key: "{{ lookup('file', do_key_public) }}"
+    state: present
+
+- name: DigitalOcean | Create sudoers file
+  remote_user: root
+  template:
+    src: "{{ role_path }}/templates/sudoers.j2"
+    dest: "/etc/sudoers.d/{{ do_user }}"
+    owner: "root"
+    group: "root"
+    mode: 0440
+    validate: '/usr/sbin/visudo -cf %s'
+
+- name: DigitalOcean | Disallow root SSH access
+  remote_user: root
+  lineinfile: dest=/etc/ssh/sshd_config
+              regexp="^PermitRootLogin"
+              line="PermitRootLogin no"
+              state=present
+  notify: Restart ssh
+
+- name: DigitalOcean | Remove Root-SSH
+  file:
+    path: /root/.ssh
+    state: absent
+
+- meta: flush_handlers

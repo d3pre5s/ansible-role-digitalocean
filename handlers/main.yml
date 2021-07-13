@@ -1,0 +1,7 @@
+---
+# handlers file for ansible-role-digitalocean
+- name: Restart ssh
+  become: yes
+  service:
+    name: ssh
+    state: restarted

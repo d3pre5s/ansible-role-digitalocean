@@ -1,0 +1,23 @@
+---
+- name: "DigitalOcean | Get Local Facts"
+  setup:
+
+- name: "DigitalOcean | Get private key"
+  set_fact:
+    do_key_private: "{{ ansible_ssh_private_key_file | default('~/.ssh/id_rsa') }}"
+
+- name: "DigitalOcean | Get public key"
+  set_fact:
+    do_key_public: "{{ do_key_private | regex_replace('$', '.pub') }}"
+
+- name: "DigitalOcean | Create ssh key"
+  digital_ocean_sshkey:
+    oauth_token: "{{ do_token }}"
+    name: "{{ do_user }}"
+    ssh_pub_key: "{{ lookup('file', do_key_public) }}"
+    state: present
+  register: do_ssh_result
+
+- name: "DigitalOcean | Set SSH-key ID"
+  set_fact:
+    do_sshkeys: "{{ do_sshkeys + [ do_ssh_result.data.ssh_key.id ] }}"

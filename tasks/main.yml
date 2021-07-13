@@ -1,0 +1,43 @@
+---
+# tasks file for ansible-role-digitalocean
+- include: ssh.yml
+  become: no
+  connection: local
+  run_once: true
+
+- name: DigitalOcean | Create a new droplet
+  become: no
+  connection: local
+  digital_ocean_droplet:
+    state: present
+    unique_name: true
+    name: "{{ inventory_hostname }}"
+    oauth_token: "{{ do_token }}"
+    size: "{{ do_size }}"
+    region: "{{ do_region }}"
+    image: "{{ do_image }}"
+    ssh_keys: "{{ do_sshkeys }}"
+    wait_timeout: 500
+  register: do_droplet
+
+# do not edit this task ever, it will ruin whole logic
+- name: DigitalOcean | Add host to inventory
+  add_host:
+    name: "{{ hostvars[item].do_droplet.data.droplet.name }}"
+    ansible_ssh_host: "{{ hostvars[item].do_droplet.data.ip_address }}"
+    groups: "{{ group_names }}"
+  run_once: true
+  with_items: "[{% for h in play_hosts %}'{{ h }}'{% if not loop.last %} ,{% endif %}{% endfor %}]"
+  delegate_to: "{{ item }}"
+
+- name: DigitalOcean | Wait for connection
+  become: no
+  connection: local
+  wait_for:
+    port: 22
+    host: "{{ do_droplet.data.ip_address }}"
+    delay: 10
+    timeout: 60
+
+- include: configure.yml
+  when: do_droplet.changed

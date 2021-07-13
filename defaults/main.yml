@@ -1,0 +1,13 @@
+---
+# defaults file for ansible-role-digitalocean
+# your uniq digital ocean api token (dont store it here - its unsecure)
+do_token: []
+do_user: "{{ ansible_user_id }}"
+do_image: "ubuntu-20-04-x64"
+do_region: "FRA1"
+
+# more information about sizes look at "digital_ocean_size_info" ansible module
+do_size: s-1vcpu-1gb
+
+# ssh-keys should be described in DigitalOcean ID format
+do_sshkeys: []

@@ -1,0 +1,11 @@
+stages:
+  - test
+
+test:
+  stage: test
+  services:
+    - docker:dind
+  image: d3pre5s/molecule:2.22
+  script:
+    - molecule lint
+    - molecule syntax

@@ -1,0 +1,6 @@
+---
+- name: Converge
+  gather_facts: no
+  hosts: all
+  roles:
+    - role: ansible-role-digitalocean

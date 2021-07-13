@@ -1,0 +1,2 @@
+skip_list:
+  - '104'  # Using bare variables is deprecated
